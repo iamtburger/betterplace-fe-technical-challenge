@@ -19,12 +19,12 @@ const localeMap = {
 // TODO: fix types
 type MoneyInputProps = {
   value: number
-  onChange: (value: string | number) => void
-  onBlur?: (value: string | number) => void
-  onFocus?: (value: string | number) => void
-  locale: string
-  id: string
-  label: string
+  onChange: (value: number) => void
+  onBlur?: (value: number) => void
+  // onFocus?: (value: number) => void
+  locale?: string
+  id?: string
+  label?: string
 } & React.HTMLAttributes<HTMLInputElement>
 
 // [x] When the user is typing it should display the actual value
@@ -53,34 +53,39 @@ export default function MoneyInput({
       return
     }
 
-    const sanitizedInputValue = replaceLeadingDecimalSeparator(e.target.value)
-
-    // TODO: clean up
-    const parsedInputValue = parseFloat(sanitizedInputValue.replace(',', '.'))
     if (e.target.value === '') {
       onChange(0)
       console.log(0)
+      setDisplayValue('')
+    } else {
+      const sanitizedInputValue = replaceLeadingDecimalSeparator(e.target.value)
+      const inputInCents = convertToCents(sanitizedInputValue)
+      onChange(inputInCents)
+      console.log(inputInCents)
+      setDisplayValue(sanitizedInputValue)
     }
-
-    const inputInCents = CENT_MULTIPLIER * parsedInputValue
-    onChange(inputInCents)
-    console.log(inputInCents)
-
-    setDisplayValue(sanitizedInputValue)
   }
 
-  const handleOnBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleOnBlur = (e: React.FocusEvent<HTMLInputElement, Element>) => {
+    const inputInCents = convertToCents(e.target.value)
     if (onBlur) {
-      onBlur(e.target.value)
+      onBlur(inputInCents)
     }
-
-    const formattedInputValue = formatDisplayValue(e.target.value, locale)
-    setDisplayValue(formattedInputValue)
+    if (e.target.value === '') {
+      onChange(0)
+      console.log(0)
+      setDisplayValue('')
+    } else {
+      onChange(inputInCents)
+      console.log(inputInCents)
+      const formattedInputValue = formatDisplayValue(e.target.value, locale)
+      setDisplayValue(formattedInputValue)
+    }
   }
 
-  const handleOnFocus = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleOnFocus = (e: React.FocusEvent<HTMLInputElement, Element>) => {
     if (onFocus) {
-      onFocus(e.target.value)
+      onFocus(e)
     }
     const sanitizedInputValue = e.target.value.replaceAll(separator, '')
     setDisplayValue(sanitizedInputValue)
@@ -108,7 +113,9 @@ export default function MoneyInput({
           onFocus={handleOnFocus}
           lang={locale}
           {...restProps}
+          style={{ paddingRight: '20px' }}
         />
+        <span style={{ marginLeft: '-20px' }}>&#8364;</span>
       </div>
     </div>
   )
@@ -127,13 +134,18 @@ const formatDisplayValue = (value: string, localeCode: string) => {
   const sanitizedInputValue = value.replaceAll(',', '.')
   const decimals = sanitizedInputValue.split('.')
   const shouldAmendDecimals = (decimals[1]?.length ?? 0) === 1
-  return sanitizedInputValue.length > 0
+  return sanitizedInputValue.length > 0 && parseFloat(sanitizedInputValue) !== 0
     ? Number(sanitizedInputValue).toLocaleString(localeCode, { minimumFractionDigits: shouldAmendDecimals ? 2 : 0 })
     : ''
 }
 
 function replaceLeadingDecimalSeparator(input: string) {
   return input.replace(/^([,.]{1,1})/, '0$1')
+}
+
+function convertToCents(value: string) {
+  const parsedInputValue = parseFloat(value.replace(',', '.'))
+  return CENT_MULTIPLIER * parsedInputValue
 }
 
 // The user can input a decimal number (in Euro).
