@@ -1,0 +1,33 @@
+.money-input-container {
+  font-family: var(--betterplace-font-families-fira-sans);
+  color: var(--betterplace-color-gray-700);
+
+  input {
+    border: 1px solid var(--betterplace-color-gray-500);
+    border-radius: 3px;
+    padding: var(--betterplace-dimension--2);
+    padding-right: calc(1.5em + 15px);
+
+    &:hover {
+      box-shadow: var(--betterplace-shadow-outer-neutral-soft-2);
+    }
+
+    &:focus {
+      outline: 2px solid var(--betterplace-color-green-800);
+      outline-offset: 2px;
+    }
+  }
+
+  .input-error {
+    border: 1px solid var(--betterplace-color-red-700);
+  }
+}
+
+.input-disabled {
+  background-color: var(--betterplace-color-gray-100);
+  color: var(--betterplace-color-gray-500);
+}
+
+.currency-symbol {
+  margin-left: calc(-1.5em - 5px);
+}
