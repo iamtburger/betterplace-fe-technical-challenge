@@ -35,7 +35,7 @@ export default function MoneyInput({
   onFocus,
   id,
   label,
-  locale = 'en',
+  locale = 'de',
   disabled = false,
   error = false,
   cssModule = { container: '', input: '' },
@@ -89,11 +89,12 @@ export default function MoneyInput({
   }
 
   useEffect(() => {
-    if (value !== undefined) {
+    const sanitizedInputValue = parseFloat(displayValue.replaceAll(',', '.')) * 100
+    if (value !== undefined && value !== sanitizedInputValue) {
       const formattedInputValue = formatDisplayValue(String(value), locale)
       setDisplayValue(formattedInputValue)
     }
-  }, [])
+  }, [value])
 
   const showLabel = label !== undefined
   const errorState = error ? _styles['input-error'] : ''
