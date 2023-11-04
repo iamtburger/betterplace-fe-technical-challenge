@@ -16,23 +16,17 @@ const localeMap = {
   },
 }
 
-// TODO: fix types
 type MoneyInputProps = {
   value: number
   onChange: (value: number) => void
   onBlur?: (value: number) => void
-  // onFocus?: (value: number) => void
   locale?: string
   id?: string
   label?: string
+  disabled?: boolean
+  error?: boolean
+  cssModule?: { container: string; input: string }
 } & React.HTMLAttributes<HTMLInputElement>
-
-// [x] When the user is typing it should display the actual value
-// [x] Max 2 digits -> if user tries to type more, cut it
-// [x] If user enters only one digit, add a 0 to the end
-// [x] If the user uses eitehr . , format it to the correct decimal
-// [x] If the user starts with a decimal separator, add a 0 to the beginning
-// [x] If the user tries to enter something other than the allowed characters, return
 
 export default function MoneyInput({
   value,
@@ -41,7 +35,10 @@ export default function MoneyInput({
   onFocus,
   id,
   label,
-  locale = 'de',
+  locale = 'en',
+  disabled = false,
+  error = false,
+  cssModule = { container: '', input: '' },
   ...restProps
 }: MoneyInputProps) {
   const [displayValue, setDisplayValue] = useState('')
@@ -99,12 +96,17 @@ export default function MoneyInput({
   }, [])
 
   const showLabel = label !== undefined
+  const errorState = error ? _styles['input-error'] : ''
+  const disabledState = disabled ? _styles['input-disabled'] : ''
 
-  // TODO: pass down classNames to container and / or input
   return (
-    <div>
-      {showLabel && <label htmlFor={id}>{label}</label>}
-      <div className="">
+    <div className={`${_styles['money-input-container']} ${cssModule.container}`}>
+      {showLabel && (
+        <label htmlFor={id} className={_styles['input-label']}>
+          {label}
+        </label>
+      )}
+      <div>
         <input
           id={id}
           value={displayValue}
@@ -112,10 +114,11 @@ export default function MoneyInput({
           onBlur={handleOnBlur}
           onFocus={handleOnFocus}
           lang={locale}
+          disabled={disabled}
+          className={`${errorState} ${disabledState} ${cssModule.input}`}
           {...restProps}
-          style={{ paddingRight: '20px' }}
         />
-        <span style={{ marginLeft: '-20px' }}>&#8364;</span>
+        <span className={_styles['currency-symbol']}>&#8364;</span>
       </div>
     </div>
   )
