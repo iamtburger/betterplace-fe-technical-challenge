@@ -35,7 +35,7 @@ export default function MoneyInput({
   onFocus,
   id,
   label,
-  locale = 'de',
+  locale = 'en',
   disabled = false,
   error = false,
   cssModule = { container: '', input: '' },
@@ -46,9 +46,12 @@ export default function MoneyInput({
   const separator = useMemo(() => (localeMap as any)[locale].separator, [locale])
 
   const handleOnInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isNotValidInput(e.target.value) || maxDecimalReached(e.target.value)) {
+    if (isNotValidInput(e.target.value) && isNotLeadingDecimalSeparator(e.target.value)) {
       return
     }
+    // if (isNotValidInput(e.target.value) || maxDecimalReached(e.target.value)) {
+    //   return
+    // }
 
     if (e.target.value === '') {
       onChange(0)
@@ -89,8 +92,8 @@ export default function MoneyInput({
   }
 
   useEffect(() => {
-    const sanitizedInputValue = parseFloat(displayValue.replaceAll(',', '.')) * 100
-    if (value !== undefined && value !== sanitizedInputValue) {
+    const valueInCents = convertToCents(displayValue)
+    if (value !== undefined && value !== valueInCents) {
       const formattedInputValue = formatDisplayValue(String(value), locale)
       setDisplayValue(formattedInputValue)
     }
@@ -125,21 +128,28 @@ export default function MoneyInput({
   )
 }
 
+// function isNotValidInput(str: string) {
+//   return !/^[\d,.]+$/.test(str) && str !== ''
+// }
+
+// function maxDecimalReached(str: string) {
+//   const decimalPart = str.split(/[,.]/)
+//   return (decimalPart[1]?.length ?? 0) > 2 || decimalPart.length > 2
+// }
+
 function isNotValidInput(str: string) {
-  return !/^[\d,.]+$/.test(str) && str !== ''
+  return !/^\d+[,.]?\d{0,2}$|^$/.test(str)
 }
 
-function maxDecimalReached(str: string) {
-  const decimalPart = str.split(/[,.]/)
-  return (decimalPart[1]?.length ?? 0) > 2 || decimalPart.length > 2
+function isNotLeadingDecimalSeparator(str: string) {
+  return !/^[,.]/.test(str)
 }
 
 const formatDisplayValue = (value: string, localeCode: string) => {
   const sanitizedInputValue = value.replaceAll(',', '.')
-  const decimals = sanitizedInputValue.split('.')
-  const shouldAmendDecimals = (decimals[1]?.length ?? 0) === 1
+  const isDecimal = /[.,]\d{0,2}$/.test(sanitizedInputValue)
   return sanitizedInputValue.length > 0 && parseFloat(sanitizedInputValue) !== 0
-    ? Number(sanitizedInputValue).toLocaleString(localeCode, { minimumFractionDigits: shouldAmendDecimals ? 2 : 0 })
+    ? Number(sanitizedInputValue).toLocaleString(localeCode, { minimumFractionDigits: isDecimal ? 2 : 0 })
     : ''
 }
 
