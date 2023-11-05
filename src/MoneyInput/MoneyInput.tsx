@@ -1,20 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import _styles from './MoneyInput.module.css'
 
-// TODO: Clean up
 const CENT_MULTIPLIER = 100
-const localeMap = {
-  en: {
-    decimal: '.',
-    separator: ',',
-    code: 'en',
-  },
-  de: {
-    decimal: ',',
-    separator: '.',
-    code: 'de',
-  },
-}
 
 type MoneyInputProps = {
   value: number
@@ -42,11 +29,12 @@ export default function MoneyInput({
   ...restProps
 }: MoneyInputProps) {
   const [displayValue, setDisplayValue] = useState('')
+  console.log(locale)
 
-  const separator = useMemo(() => (localeMap as any)[locale].separator, [locale])
+  const separator = useMemo(() => getGroupSeparator(locale), [locale])
 
   const handleOnInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isNotValidInput(e.target.value) || maxDecimalReached(e.target.value)) {
+    if (isNotValidInput(e.target.value) && isNotLeadingDecimalSeparator(e.target.value)) {
       return
     }
 
@@ -89,11 +77,12 @@ export default function MoneyInput({
   }
 
   useEffect(() => {
-    if (value !== undefined) {
-      const formattedInputValue = formatDisplayValue(String(value), locale)
+    const valueInCents = convertToCents(displayValue)
+    if (value !== undefined && value !== valueInCents) {
+      const formattedInputValue = formatDisplayValue(String(value / 100), locale)
       setDisplayValue(formattedInputValue)
     }
-  }, [])
+  }, [value])
 
   const showLabel = label !== undefined
   const errorState = error ? _styles['input-error'] : ''
@@ -125,20 +114,18 @@ export default function MoneyInput({
 }
 
 function isNotValidInput(str: string) {
-  return !/^[\d,.]+$/.test(str) && str !== ''
+  return !/^\d+[,.]?\d{0,2}$|^$/.test(str)
 }
 
-function maxDecimalReached(str: string) {
-  const decimalPart = str.split(/[,.]/)
-  return (decimalPart[1]?.length ?? 0) > 2 || decimalPart.length > 2
+function isNotLeadingDecimalSeparator(str: string) {
+  return !/^[,.]/.test(str)
 }
 
 const formatDisplayValue = (value: string, localeCode: string) => {
   const sanitizedInputValue = value.replaceAll(',', '.')
-  const decimals = sanitizedInputValue.split('.')
-  const shouldAmendDecimals = (decimals[1]?.length ?? 0) === 1
+  const isDecimal = /[.,]\d{0,2}$/.test(sanitizedInputValue)
   return sanitizedInputValue.length > 0 && parseFloat(sanitizedInputValue) !== 0
-    ? Number(sanitizedInputValue).toLocaleString(localeCode, { minimumFractionDigits: shouldAmendDecimals ? 2 : 0 })
+    ? Number(sanitizedInputValue).toLocaleString(localeCode, { minimumFractionDigits: isDecimal ? 2 : 0 })
     : ''
 }
 
@@ -149,6 +136,15 @@ function replaceLeadingDecimalSeparator(input: string) {
 function convertToCents(value: string) {
   const parsedInputValue = parseFloat(value.replace(',', '.'))
   return CENT_MULTIPLIER * parsedInputValue
+}
+
+function getGroupSeparator(locale: string = 'en') {
+  const numberWithGroupAndDecimalSeparator = 1000.1
+  const groupSeparator = Intl.NumberFormat(locale)
+    .formatToParts(numberWithGroupAndDecimalSeparator)
+    .find((part) => part.type === 'group')?.value
+
+  return groupSeparator ? groupSeparator : ','
 }
 
 // The user can input a decimal number (in Euro).
