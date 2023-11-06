@@ -5,7 +5,7 @@ export function isInputInvalid(str: string) {
 }
 
 export function isNotLeadingDecimalSeparator(str: string) {
-  return !/^[,.]/.test(str)
+  return !/^[,.]$/.test(str)
 }
 
 export const formatDisplayValue = (value: string, localeCode: string) => {
